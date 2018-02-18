@@ -5,27 +5,34 @@
  *      Author: Jevin
  */
 
-#include <SFML/Graphics.hpp>
+#include <iostream>
 #include "config.hpp"
 #include "token.hpp"
+#include "resourcemanager.hpp"
 
 
 Token::Token() :
     x_pos(0),
     y_pos(0) {
-    model.setRadius(TOKEN_RADIUS);
-    model.setFillColor(sf::Color::Cyan);
+        model.setRadius(TOKEN_RADIUS);
+        model.setTexture(&resource_manager.textures[Textures::TokenTexture]);
+        model.setFillColor(sf::Color::Cyan);
 }
 
 Token::Token(sf::Color token_color) :
     x_pos(0),
     y_pos(0) {
-    model.setRadius(TOKEN_RADIUS);
-    model.setFillColor(token_color);
+        model.setRadius(TOKEN_RADIUS);
+        model.setTexture(&resource_manager.textures[Textures::TokenTexture]);
+        model.setFillColor(token_color);
 }
 
-sf::CircleShape Token::get_model() const {
-    return model;
+//Copy constructor so we don't lose the token texture when it is invalidated.
+Token::Token(const Token& original) {
+    x_pos = original.x_pos;
+    y_pos = original.y_pos;
+    model = original.model;
+    model.setTexture(&resource_manager.textures[Textures::TokenTexture]);
 }
 
 sf::Color Token::get_fill_color() const {
@@ -46,7 +53,7 @@ void Token::set_pixel_position(const int x_pos_in_wall, const int y_pos_in_wall)
         y_pos = y_pos_in_wall;
         const float token_diameter = TOKEN_RADIUS * 2;
         const unsigned int x_pos_in_pix = token_diameter * x_pos;
-        const unsigned int y_pos_in_pix = (WINDOW_HEIGHT-token_diameter) - (token_diameter*(y_pos-1));
+        const unsigned int y_pos_in_pix = (MAIN_WINDOW_HEIGHT-token_diameter) - (token_diameter*(y_pos-1));
         model.setPosition(x_pos_in_pix, y_pos_in_pix);
     }
 }
@@ -79,6 +86,10 @@ void Token::set_y_position(const int y) {
 
 int Token::get_y_position() const {
     return y_pos;
+}
+
+void Token::draw(sf::RenderTarget& target, sf::RenderStates states) const {
+    target.draw(model, states);
 }
 
 

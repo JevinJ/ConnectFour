@@ -5,12 +5,9 @@
  *      Author: Jevin
  */
 
-#include <memory>
-#include <SFML/Graphics.hpp>
-#include <vector>
 #include "board.hpp"
 #include "config.hpp"
-#include "token.hpp"
+#include "resourcemanager.hpp"
 
 
 Board::Board() :
@@ -27,15 +24,17 @@ std::vector<std::vector<Token>> Board::get_token_wall() const {
 
 /*
  * description:
- *     Returns an integer representation of the token wall. Used to check win/tie state,
+ *     Returns a bool representation of the token wall. Used to check win/tie state,
  *         use negamax, etc.
  */
-std::vector<std::vector<int>> Board::get_int_token_wall() const {
-    std::vector<std::vector<int>> token_wall_as_int;
+std::vector<std::vector<bool>> Board::get_bool_token_wall(const sf::Color human_color) const {
+    std::vector<std::vector<bool>> token_wall_as_int;
+    token_wall_as_int.reserve(TOKEN_WALL_WIDTH);
     for(auto col : token_wall) {
-        std::vector<int> whole_column;
+        std::vector<bool> whole_column;
+        whole_column.reserve(TOKEN_WALL_HEIGHT);
         std::transform(col.begin(), col.end(), std::back_inserter(whole_column),
-            [&](const Token& token){if(token.get_fill_color() == sf::Color::Red) return 1; else return -1;});
+            [&](const Token& token){if(token.get_fill_color() == human_color) return false; else return true;});
         token_wall_as_int.push_back(whole_column);
     }
     return token_wall_as_int;
@@ -64,7 +63,7 @@ void Board::set_preplace_token(Token& token) {
  */
 void Board::move_preplace_token(sf::Keyboard::Key direction) {
     if(preplace_token != nullptr) {
-        const unsigned int x_pos = preplace_token->get_x_position();
+        const int x_pos = preplace_token->get_x_position();
         if(direction == sf::Keyboard::Left) {
             if(x_pos >= 1) {
                 preplace_token->set_x_position(x_pos-1);
@@ -82,7 +81,7 @@ void Board::move_preplace_token(sf::Keyboard::Key direction) {
 
 void Board::drop_preplace_token() {
     if(preplace_token != nullptr and not slotIsFull(preplace_token->get_x_position())) {
-        const unsigned int x_pos = preplace_token->get_x_position();
+        const int x_pos = preplace_token->get_x_position();
         token_wall[x_pos].push_back(*preplace_token);
         token_wall[x_pos].back().set_pixel_position(x_pos, token_wall[x_pos].size());
         preplace_token = nullptr;

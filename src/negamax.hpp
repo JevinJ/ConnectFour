@@ -7,13 +7,10 @@
 
 #ifndef NEGAMAX_HPP_
 #define NEGAMAX_HPP_
-#include <SFML/Graphics.hpp>
-#include <vector>
-#include "state.hpp"
 
 
-int score(const int int_color, const int depth);
-int negamax(std::vector<std::vector<int>>& int_token_wall, const int int_color, int alpha, const int beta, const int current_depth=0);
+int score(const bool bool_color, const int depth);
+int negamax(std::vector<std::vector<bool>>& bool_token_wall, const bool bool_color, int alpha, int beta, const Difficulty difficulty, const int current_depth=0);
 
 
 #endif /* NEGAMAX_HPP_ */

@@ -5,28 +5,56 @@
  *      Author: Jevin
  */
 
-
-#include <iostream>
-#include <memory>
-#include <SFML/Graphics.hpp>
 #include "config.hpp"
 #include "negamax.hpp"
+#include "resourcemanager.hpp"
 #include "state.hpp"
 #include "token.hpp"
 
 
-State::State() :
-    player_one(sf::Color::Black),
-    player_two(sf::Color::Red) {
-    render_window.create(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "ConnectFour");
-    render_window.setFramerateLimit(60);
+State::State(const UserOptions user_options) :
+    isEndOfGame(false),
+    user_options(user_options),
+    player_one(user_options.player_one_color),
+    player_two(user_options.player_two_color) {
+        //Whoever has the black token goes first.
+        if(user_options.player_one_color == CustomColor::Black) {
+            isPlayerOneTurn = true;
+        }
+        else {
+            isPlayerOneTurn = false;
+        }
+        //Set thread pool count.
+        const int detected_cores = std::thread::hardware_concurrency();
+        if(detected_cores == 0) {
+            throw(std::runtime_error("Error detecting core count with thread::hardware_concurrency() during creation of thread pool."));
+        }
+        else if(detected_cores >= 1 and detected_cores < TOKEN_WALL_WIDTH) {
+            negamax_thread_pool.resize(detected_cores);
+        }
+        else {
+            negamax_thread_pool.resize(TOKEN_WALL_WIDTH);
+        }
+        render_window_settings.antialiasingLevel = MAIN_WINDOW_AA_LEVEL;
+        render_window.create(sf::VideoMode(MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT), "Connect Four", sf::Style::Close, render_window_settings);
+        render_window.setFramerateLimit(60);
 }
 
-State::State(sf::Color player_one_color, sf::Color player_two_color) :
-    player_one(player_one_color),
-    player_two(player_two_color) {
-        render_window.create(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "ConnectFour");
-        render_window.setFramerateLimit(60);
+//Move assignment constructor so we can reset the game when the user requests to.
+State& State::operator=(State&& original) {
+    //Whoever has the black token goes first.
+    if(original.user_options.player_one_color == CustomColor::Black) {
+        this->isPlayerOneTurn = true;
+    }
+    else {
+        this->isPlayerOneTurn = false;
+    }
+    this->isEndOfGame = false;
+    this->endgame_message = sf::Text();
+    this->board = Board();
+    this->player_one = Player(original.user_options.player_one_color);
+    this->player_two = Player(original.user_options.player_two_color);
+    return *this;
 }
 
 /*
@@ -34,17 +62,25 @@ State::State(sf::Color player_one_color, sf::Color player_two_color) :
  *     Draws all objects via a sf::RenderWindow object in State.
  */
 void State::draw() {
-    const Token* preplaceToken = board.get_preplace_token();
-    if(preplaceToken != nullptr) {
-        render_window.draw(preplaceToken->get_model());
+    render_window.clear(CustomColor::LightGrey);
+
+    const Token* preplace_token = board.get_preplace_token();
+    if(preplace_token != nullptr) {
+        render_window.draw(*preplace_token);
     }
 
     const std::vector<std::vector<Token>> token_wall = board.get_token_wall();
-    for(unsigned int i = 0; i < token_wall.size(); ++i) {
-        for(unsigned int j = 0; j < token_wall[i].size(); ++j) {
-            render_window.draw(token_wall[i][j].get_model());
+    for(const auto& x_pos : token_wall) {
+        for(const auto& y_pos : x_pos) {
+            render_window.draw(y_pos);
         }
     }
+
+    if(isEndOfGame) {
+        render_window.draw(endgame_message);
+    }
+
+    render_window.display();
 }
 
 /*
@@ -54,168 +90,60 @@ void State::draw() {
  *     For each possible move, push the move onto it's position in a copy of the current token_wall,
  *     get a score from negamax, then pop the move.
  * params:
- *     int_color: an int representation of a token color(in config.hpp).
+ *     bool_color: a bool representation of a token color(in config.hpp) which we will return a best move for.
  */
-int State::get_best_move(const int int_color) {
-    std::vector<std::vector<int>> int_token_wall = board.get_int_token_wall();
-    std::vector<unsigned int> available_moves = get_available_moves(int_token_wall);
-    std::vector<std::pair<int, int>> move_scores;
-    move_scores.reserve(TOKEN_WALL_WIDTH+1);
-    int best_score = INT_MIN;
+int State::get_best_move(const bool bool_color) {
+    std::vector<std::vector<bool>> bool_token_wall = board.get_bool_token_wall(user_options.player_one_color);
+    std::vector<std::pair<int, std::shared_future<int>>> move_scores;
+    move_scores.reserve(TOKEN_WALL_WIDTH);
 
-    for(int x : available_moves) {
-        int_token_wall[x].push_back(int_color);
-        const int score = negamax(int_token_wall, int_color, INT_MIN, INT_MAX);
-        int_token_wall[x].pop_back();
-        move_scores.push_back(std::make_pair(x, score));
-        best_score = std::max(best_score, score);
+    Difficulty difficulty = user_options.difficulty;
+    for(const int& x_pos : get_available_moves(bool_token_wall)) {
+        bool_token_wall[x_pos].push_back(true);
+        move_scores.push_back(std::make_pair(x_pos, negamax_thread_pool.push(
+                [bool_token_wall, bool_color, difficulty](const int id) mutable {return negamax(bool_token_wall, true, INT_MIN, INT_MAX, difficulty);})));
+        bool_token_wall[x_pos].pop_back();
     }
-    std::vector<std::pair<int, int>> best_moves;
-    std::copy_if(move_scores.begin(), move_scores.end(), std::back_inserter(best_moves),
-            [&](std::pair<int, int> move_score){return move_score.second >= best_score;});
 
-    if(best_moves.size() == 1) {
-        return best_moves[0].first;
+    //Find the largest score.
+    const int best_score = std::max_element(move_scores.begin(), move_scores.end(),
+            [&](const auto& move_score_a, const auto& move_score_b){return move_score_a.second.get() < move_score_b.second.get();})->second.get();
+
+    //Get the best moves and store them in a new vector to replace std::future with it's value.
+    std::vector<std::pair<int, int>> best_moves;
+    for(const auto& move_score : move_scores) {
+        if(move_score.second.get() >= best_score) {
+            best_moves.push_back(std::make_pair(move_score.first, move_score.second.get()));
+        }
     }
     return best_moves[rand()%best_moves.size()].first;
 }
 
-/*
- * description:
- *     Checks if the token wall is in a winning state for a given color.
- * params:
- *     int_token_wall<vector<vector<unsigned int>>: an int representation of the token wall(Board.get_int_token_wall())
- *     int_color: an int representation of a token color(in config.hpp).
- */
-bool isWinState(const std::vector<std::vector<int>>& int_token_wall, const int int_color) {
-    auto isCorrectColor = [&](std::pair<int, int> x_y){
-        const int x = x_y.first;
-        const int y = x_y.second;
-        return y < int_token_wall[x].size() and int_token_wall[x][y] == int_color;
-    };
-
-    std::vector<std::pair<int, int>> winning_tokens;
-    winning_tokens.reserve(4);
-    for(int x = 0; x < TOKEN_WALL_WIDTH; ++x) {
-        for(int y = 0; y < TOKEN_WALL_HEIGHT; ++y) {
-            //Upwards win check.
-            if(y + 3 < TOKEN_WALL_HEIGHT) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x, y+i));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-            //Upwards right diagonal win check.
-            if(x + 3 < TOKEN_WALL_WIDTH and y + 3 < TOKEN_WALL_HEIGHT) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x+i, y+i));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-
-            //Right win check.
-            if(x + 3 < TOKEN_WALL_WIDTH) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x+i, y));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-
-            //Downwards right win check.
-            if(x + 3 < TOKEN_WALL_WIDTH and y - 3 >= 0) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x+i, y-i));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-
-            //Downwards win check.
-            if(y - 3 >= 0) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x, y-i));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-
-            //Downwards left win check.
-            if(x - 3 >= 0 and y - 3 >= 0) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x-i, y-i));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-
-            //Left side win check.
-            if(x - 3 >= 0) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x-i, y));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-
-            //Upwards left diagonal win check.
-            if(x - 3 >= 0 and y + 3 < TOKEN_WALL_HEIGHT) {
-                winning_tokens.clear();
-                for(int i = 0; i < 4; ++i) {
-                    winning_tokens.push_back(std::make_pair(x-i, y+i));
-                }
-                if(all_of(winning_tokens.begin(), winning_tokens.end(), isCorrectColor)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-/*
- * description:
- *     Checks if the token wall is filled with no winners.
- *     WARNING: This does NOT check if someone has won(use isWinState instead).
- * params:
- *     int_token_wall<vector<vector<unsigned int>>: an int representation of the token wall(Board.get_int_token_wall())
- */
-bool isTieState(const std::vector<std::vector<int>>& int_token_wall) {
-    for(auto col : int_token_wall) {
-        if(col.size() < TOKEN_WALL_HEIGHT) {
-            return false;
-        }
-    }
-    return true;
+void State::signal_end_of_game(const std::string message) {
+    isEndOfGame = true;
+    endgame_message.setFont(resource_manager.fonts[Fonts::TitilliumWeb]);
+    endgame_message.setString(message + "\nPress 'R' to restart.");
+    endgame_message.setCharacterSize(36);
+    endgame_message.setStyle(sf::Text::Bold);
+    endgame_message.setFillColor(sf::Color::White);
+    //Centering the text
+    sf::FloatRect text_rect = endgame_message.getLocalBounds();
+    endgame_message.setOrigin((text_rect.left + text_rect.width/2.0f), (text_rect.top + text_rect.height/2.0f));
+    endgame_message.setPosition(sf::Vector2f(MAIN_WINDOW_WIDTH/2.0f, MAIN_WINDOW_HEIGHT/2.0f));
 }
 
 /*
  * params:
- *     int_token_wall<vector<vector<unsigned int>>: an int representation of the token wall(Board.get_int_token_wall())
+ *     bool_token_wall: a bool representation of the token wall(Board.get_bool_token_wall())
  * returns:
- *     vector<unsigned int> of x positions that a token can be dropped at.
+ *     vector<int> of x positions that a token can be dropped at.
  */
-std::vector<unsigned int> get_available_moves(const std::vector<std::vector<int>>& int_token_wall) {
-    std::vector<unsigned int> empty_indexes;
-    for(unsigned int x = 0; x < TOKEN_WALL_WIDTH; ++x) {
-        if(int_token_wall[x].size() < TOKEN_WALL_HEIGHT) {
-            empty_indexes.push_back(x);
+std::vector<int> get_available_moves(const std::vector<std::vector<bool>>& bool_token_wall) {
+    std::vector<int> empty_indexes;
+    empty_indexes.reserve(TOKEN_WALL_WIDTH);
+    for(int x_pos = 0; x_pos < TOKEN_WALL_WIDTH; ++x_pos) {
+        if(bool_token_wall[x_pos].size() < TOKEN_WALL_HEIGHT) {
+            empty_indexes.push_back(x_pos);
         }
     }
     return empty_indexes;

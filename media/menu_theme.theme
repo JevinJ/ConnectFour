@@ -1,0 +1,65 @@
+Window {
+	BackgroundColor: #10101055;
+}
+
+Window controls_main_box Label#controls_title {
+	FontSize: 42;
+	Color: #FFFFFFFF;
+}
+
+Window controls_text_box Label {
+	FontSize: 18;
+	Color: #FFFFFFFF;
+}
+
+Window difficulty_select_main_box Label#difficulty_select_title {
+	FontSize: 42;
+	Color: #FFFFFFFF;
+}
+
+/*
+Difficulty select
+*/
+Window difficulty_select_button_box Button#easy_button {
+	FontSize: 30;
+	Color: #7F7F7FFF;
+}
+
+Window difficulty_select_button_box Button#medium_button {
+	FontSize: 30;
+	Color: #7F7F7FFF;
+}
+
+Window difficulty_select_button_box Button#hard_button {
+	FontSize: 30;
+	Color: #7F7F7FFF;
+}
+
+/*
+Token select
+*/
+Window token_select_main_box Label#token_select_title {
+	FontSize: 32;
+	Color: #FFFFFFFF;
+}
+
+
+Window token_select_button_box Button#red_token_button {
+	FontSize: 30;
+	BackgroundColor: #25252555; 
+}
+
+
+Window token_select_button_box Button#black_token_button {
+	FontSize: 30;
+	BackgroundColor: #25252555; 
+}
+
+Window start_button_box Button {
+	FontSize: 42;
+	Color: #FFFFFFFF;
+}
+
+Button:NORMAL {
+	BackgroundColor: #25252555;
+}

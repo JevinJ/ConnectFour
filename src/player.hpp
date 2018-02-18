@@ -14,9 +14,9 @@
 class Player {
     std::stack<Token> player_tokens;
 public:
-    Player(sf::Color token_color);
+    Player(const sf::Color token_color);
     Token take_token();
-    int get_token_count();
+    int get_token_count() const;
 };
 
 

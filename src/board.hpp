@@ -7,8 +7,6 @@
 
 #ifndef BOARD_HPP_
 #define BOARD_HPP_
-#include <memory>
-#include <vector>
 #include "token.hpp"
 
 
@@ -22,12 +20,12 @@ class Board {
 public:
     Board();
     std::vector<std::vector<Token>> get_token_wall() const;
-    std::vector<std::vector<int>> get_int_token_wall() const;
+    std::vector<std::vector<bool>> get_bool_token_wall(const sf::Color human_color) const;
     Token* get_preplace_token() const;
     void set_preplace_token(Token& token);
     void move_preplace_token(sf::Keyboard::Key direction);
     void drop_preplace_token();
-    bool slotIsFull(int x_pos);
+    bool slotIsFull(const int x_pos);
 };
 
 
