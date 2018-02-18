@@ -12,7 +12,7 @@ all: bin\$(EXE)
 bin\$(EXE): $(USER_OBJS)
 	@echo 'Building target: $@'
 	$(CXX) -L bin\ $(CXXFLAGS) -o bin\$(EXE) $(USER_OBJS) $(LIBS)
-	@echo 'Finished building target: $@'
+	@echo '\nFinished building target: $@'
 
 
 src\board.o: src\board.cpp src\board.hpp
@@ -53,9 +53,12 @@ src\useroptions.o: src\useroptions.cpp src\useroptions.hpp
 clean:
 ifeq ($(OS), Windows_NT)
 		del bin\$(EXE).exe $(USER_OBJS)
+		@echo 'Finished target: $@'
 endif
 ifeq ($(OS), Linux)
 		rm -f bin\$(EXE).exe $(USER_OBJS)
+		@echo 'Finished target: $@'
 endif
+
 		
 	
