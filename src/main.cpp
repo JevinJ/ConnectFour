@@ -42,7 +42,7 @@ int main()
             }
         }
         //User input.
-        if(state.render_window.pollEvent(event)) {
+        while(state.render_window.pollEvent(event)) {
             //Close the window.
             if(event.type == sf::Event::Closed) {
                 state.render_window.close();
