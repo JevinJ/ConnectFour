@@ -5,22 +5,15 @@ A C++ Connect Four game made with SFML(Simple and Fast Multimedia Library), SFGU
 ### Prerequisites
 
 Software you'll need to install, be sure to setup PATH variables:
-
-[MinGW](http://www.mingw.org/)
-
-mingw32-make or make
+* [MinGW](http://www.mingw.org/)
+* mingw32-make or make
 
 Optional, for development:
-
-[SFML 2.4.2](https://www.sfml-dev.org/download.php)
-
-[SFGUI](https://github.com/TankOs/SFGUI)
-
-[Thor](http://www.bromeon.ch/libraries/thor/download/index.html)
-
-[CTPL](https://github.com/vit-vit/CTPL)
-
-[Boost.Test](http://www.boost.org/doc/libs/1_66_0/libs/test/doc/html/index.html)
+* [SFML 2.4.2](https://www.sfml-dev.org/download.php)
+* [SFGUI](https://github.com/TankOs/SFGUI)
+* [Thor](http://www.bromeon.ch/libraries/thor/download/index.html)
+* [CTPL](https://github.com/vit-vit/CTPL)
+* [Boost.Test](http://www.boost.org/doc/libs/1_66_0/libs/test/doc/html/index.html)
 
 ### Building
 
@@ -63,13 +56,10 @@ If built with the above command the name of the file would be "libboost_unit_tes
 
 Run mingw32-make (or regular make) with the following arguments:
 ```
-BOOST_PATH: The path of the folder where you unzipped boost, for example: if you unzipped boost in C:/ you would put C:/boost(version_number_here).
-BOOST_TEST_DLL: The name of your compiled unit test framework DLL file without the suffix, for example: "libboost_unit_test_framework-mgw72-mt-x64-1_66"
-```
-
-```
 mingw32-make tests BOOST_PATH=your/path/here/ BOOST_TEST_DLL=your_dll_name_here
 ```
+1. BOOST_PATH: The path of the folder where you unzipped boost, for example: if you unzipped boost in C:/ you would put C:/boost(version_number_here).
+2. BOOST_TEST_DLL: The name of your compiled unit test framework DLL file without the suffix, for example: "libboost_unit_test_framework-mgw72-mt-x64-1_66"
 
 If there are no errors with the build, you can now navigate to /bin/ and run AllTests, [with](http://www.boost.org/doc/libs/1_63_0/libs/test/doc/html/boost_test/runtime_config/summary.html) or without commands.
 
