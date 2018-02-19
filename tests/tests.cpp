@@ -123,13 +123,13 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(StateTests)
 BOOST_AUTO_TEST_CASE(WinStateTest) {
-    int X = 1;
-    int O = -1;
+    bool X = true;
+    bool O = false;
 
-    std::vector<std::vector<int>> vertical_win_check;
-    std::vector<std::vector<int>> diagonal_win_check;
-    std::vector<std::vector<int>> horizontal_win_check;
-    std::vector<std::vector<int>> horizontal_small_size_check;
+    std::vector<std::vector<bool>> vertical_win_check;
+    std::vector<std::vector<bool>> diagonal_win_check;
+    std::vector<std::vector<bool>> horizontal_win_check;
+    std::vector<std::vector<bool>> horizontal_small_size_check;
     vertical_win_check = {{X, X, X, X},
                           {},
                           {},
@@ -216,54 +216,54 @@ BOOST_AUTO_TEST_CASE(TieStateTest) {
     //Todo tie state generation test
 }
 BOOST_AUTO_TEST_CASE(AvailableMovesTest) {
-    int X = 1;
-    int O = -1;
-    std::vector<unsigned int> expected;
-    std::vector<unsigned int> actual;
-    std::vector<std::vector<int>> int_token_wall;
+    bool X = true;
+    bool O = false;
+    std::vector<int> expected;
+    std::vector<int> actual;
+    std::vector<std::vector<bool>> bool_token_wall;
 
-    int_token_wall  = {{},
-                       {},
-                       {},
-                       {O, O, O, X},
-                       {O, O, X},
-                       {O, X},
-                       {X}};
+    bool_token_wall  = {{},
+                        {},
+                        {},
+                        {O, O, O, X},
+                        {O, O, X},
+                        {O, X},
+                        {X}};
     expected = {0, 1, 2, 3, 4, 5, 6};
-    actual = get_available_moves(int_token_wall);
+    actual = get_available_moves(bool_token_wall);
     BOOST_REQUIRE_EQUAL(std::is_permutation(expected.begin(), expected.end(), actual.begin()), true);
 
-    int_token_wall  = {{},
-                       {},
-                       {},
-                       {O, O, O, X, O, X},
-                       {O, O, X, O, X, O},
-                       {O, X, O, X, O, X},
-                       {X, O, X, O, X, O}};
+    bool_token_wall  = {{},
+                        {},
+                        {},
+                        {O, O, O, X, O, X},
+                        {O, O, X, O, X, O},
+                        {O, X, O, X, O, X},
+                        {X, O, X, O, X, O}};
     expected = {0, 1, 2};
-    actual = get_available_moves(int_token_wall);
+    actual = get_available_moves(bool_token_wall);
     BOOST_REQUIRE_EQUAL(std::is_permutation(expected.begin(), expected.end(), actual.begin()), true);
 
-    int_token_wall  = {{O, O, O, X, O, X},
-                       {},
-                       {},
-                       {O, O, O, X, O, X},
-                       {O, O, X, O, X},
-                       {O, X, O, X, O, X},
-                       {X, O, X, O, X}};
+    bool_token_wall  = {{O, O, O, X, O, X},
+                        {},
+                        {},
+                        {O, O, O, X, O, X},
+                        {O, O, X, O, X},
+                        {O, X, O, X, O, X},
+                        {X, O, X, O, X}};
     expected = {1, 2, 4, 6};
-    actual = get_available_moves(int_token_wall);
+    actual = get_available_moves(bool_token_wall);
     BOOST_REQUIRE_EQUAL(std::is_permutation(expected.begin(), expected.end(), actual.begin()), true);
 
-    int_token_wall  = {{O, O, O, X, O},
-                       {O, O, O, X, O, X},
-                       {},
-                       {},
-                       {O, O, X, O, X, O},
-                       {O, X, O, X, O},
-                       {X, O, X, O, X}};
+    bool_token_wall  = {{O, O, O, X, O},
+                        {O, O, O, X, O, X},
+                        {},
+                        {},
+                        {O, O, X, O, X, O},
+                        {O, X, O, X, O},
+                        {X, O, X, O, X}};
     expected = {0, 2, 3, 5, 6};
-    actual = get_available_moves(int_token_wall);
+    actual = get_available_moves(bool_token_wall);
     BOOST_REQUIRE_EQUAL(std::is_permutation(expected.begin(), expected.end(), actual.begin()), true);
 
 }
