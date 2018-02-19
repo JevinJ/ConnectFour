@@ -55,10 +55,10 @@ If built with the above command the name of the file would be "libboost_unit_tes
 
 
 Run mingw32-make (or regular make) with the following arguments:
-
-BOOST_PATH = The path of the folder where you unzipped boost, for example: if you unzipped boost in C:/ you would put C:/boost(version_number_here).
-
-BOOST_TEST_DLL = The name of your compiled unit test framework DLL file without the suffix, for example: "libboost_unit_test_framework-mgw72-mt-x64-1_66"
+```
+BOOST_PATH: The path of the folder where you unzipped boost, for example: if you unzipped boost in C:/ you would put C:/boost(version_number_here).
+BOOST_TEST_DLL: The name of your compiled unit test framework DLL file without the suffix, for example: "libboost_unit_test_framework-mgw72-mt-x64-1_66"
+```
 
 ```
 mingw32-make tests BOOST_PATH=your/path/here/ BOOST_TEST_DLL=your_dll_name_here
