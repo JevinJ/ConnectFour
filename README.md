@@ -5,14 +5,21 @@ A C++ Connect Four game made with SFML(Simple and Fast Multimedia Library), SFGU
 ### Prerequisites
 
 Software you'll need to install, be sure to setup PATH variables:
+
 [MinGW](http://www.mingw.org/)
+
 mingw32-make or make
 
 Optional, for development:
+
 [SFML 2.4.2](https://www.sfml-dev.org/download.php)
+
 [SFGUI](https://github.com/TankOs/SFGUI)
+
 [Thor](http://www.bromeon.ch/libraries/thor/download/index.html)
+
 [CTPL](https://github.com/vit-vit/CTPL)
+
 [Boost.Test](http://www.boost.org/doc/libs/1_66_0/libs/test/doc/html/index.html)
 
 ### Building
